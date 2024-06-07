@@ -1,10 +1,14 @@
+from typing import Optional
+
 from fastapi import FastAPI
-from gunicorn.app.base import BaseApplication
+from gunicorn.app.base import BaseApplication  # type: ignore
+
 from app.main import app
-from conf.gunicorn import gunicorn_options
+from core.gunicorn import gunicorn_options
+
 
 class StandaloneApplication(BaseApplication):
-    def __init__(self, app: FastAPI, options:dict = None):
+    def __init__(self, app: FastAPI, options: Optional[dict] = None):
         self.options = options or {}
         self.application = app
         super().__init__()

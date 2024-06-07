@@ -1,5 +1,5 @@
 # 使用官方Python镜像作为基础镜像
-FROM python:3.9-slim-bullseye
+FROM python:3.9-slim-bullseye AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -18,16 +18,19 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
 # 复制项目所有文件到容器中
-COPY . .
+COPY src/ .
 
 # 编译项目为二进制文件
-RUN python -m nuitka --follow-imports --standalone --include-package=gunicorn --include-package=uvicorn --output-dir=dist --output-filename=server src/run.py
+RUN python -m nuitka --follow-imports --standalone --include-package=gunicorn --include-package=uvicorn --output-dir=dist --output-filename=server run.py
+
+# 复制到一个目录中
+RUN mkdir -p /app/build && mv /app/dist/run.dist/* /app/build && mv /app/templates /app/build && mv /app/static /app/build
 
 # 使用一个更小的基础镜像来运行二进制文件
 FROM debian:bullseye-slim
 
 # 复制编译后的二进制文件到新的基础镜像
-COPY --from=0 /app/dist/run.dist /app
+COPY --from=builder /app/build /app
 
 # 设置工作目录
 WORKDIR /app

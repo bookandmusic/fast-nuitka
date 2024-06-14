@@ -1,8 +1,9 @@
 name: Build and Push Docker Image
 
-on:
-  release:
-    types: [created]
+on: 
+  push:
+    tags:
+      - '*'
 
 jobs:
   build-and-push:
@@ -41,3 +42,31 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/py-server:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/py-server:${{ env.date }}-${{ env.short_sha }}
           platforms: linux/amd64,linux/arm64
+
+      - name: Extract and compress /app directory for amd64
+        run: |
+          docker run -d --platform linux/amd64 --name extract_amd64 ${{ secrets.DOCKERHUB_USERNAME }}/py-server:${{ env.date }}-${{ env.short_sha }} sleep 10  
+          docker cp extract_amd64:/app ./app_amd64
+          tar -czvf app_amd64_${{ env.date }}_${{ env.short_sha }}.tar.gz -C ./app_amd64 .
+          docker rm -f extract_amd64
+
+      - name: Extract and compress /app directory for arm64
+        run: |
+          docker run -d --platform linux/arm64 --name extract_arm64 ${{ secrets.DOCKERHUB_USERNAME }}/py-server:${{ env.date }}-${{ env.short_sha }} sleep 10 
+          docker cp extract_arm64:/app ./app_arm64
+          tar -czvf app_arm64_${{ env.date }}_${{ env.short_sha }}.tar.gz -C ./app_arm64 .
+          docker rm -f extract_arm64
+
+      - name: Upload amd64 tar to release assets
+        uses: ncipollo/release-action@v1
+        with:
+          bodyFile: ./app_amd64_${{ env.date }}_${{ env.short_sha }}.tar.gz
+          artifacts: app_amd64_${{ env.date }}_${{ env.short_sha }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload arm64 tar to release assets
+        uses: ncipollo/release-action@v1
+        with:
+          bodyFile: ./app_arm64_${{ env.date }}_${{ env.short_sha }}.tar.gz
+          artifacts: app_arm64_${{ env.date }}_${{ env.short_sha }}.tar.gz
+          artifactContentType: application/gzip

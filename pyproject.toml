@@ -17,12 +17,3 @@ flake8 = "^7.0.0"
 mypy = "^1.10.0"
 isort = "^5.13.2"
 
-
-[[tool.poetry.source]]
-name = "mirrors"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-priority = "primary"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

@@ -1,14 +1,25 @@
 import os
 
-from fastapi.templating import Jinja2Templates
+from pydantic import ValidationInfo, field_validator
+from pydantic_settings import BaseSettings
 
-from core.app import AppBaseSettings
 
-
-class AppSettings(AppBaseSettings):
+class AppSettings(BaseSettings):
     """公共配置参数"""
 
-    BASE_DIR: str = "/app"
-    TEMPLATES_DIR: str = os.path.join(BASE_DIR, "templates")
-    STATIC_DIRECTORY: str = os.path.join(BASE_DIR, "static")
-    TEMPLATES: Jinja2Templates = Jinja2Templates(directory=TEMPLATES_DIR)
+    DEBUG: bool = False
+    BASE_DIR: str = ""
+    TEMPLATES_DIR: str = ""
+    STATIC_DIR: str = ""
+
+    @field_validator("TEMPLATES_DIR")
+    def get_templates_dir(cls, v: str, info: ValidationInfo) -> str:
+        if v:
+            return v
+        return os.path.join(info.data["BASE_DIR"], "templates")
+
+    @field_validator("STATIC_DIR")
+    def get_static_dir(cls, v: str, info: ValidationInfo) -> str:
+        if v:
+            return v
+        return os.path.join(info.data["BASE_DIR"], "static")

@@ -1,5 +1,5 @@
 # 使用官方Python镜像作为基础镜像
-FROM python:3.9-slim-bullseye AS builder
+FROM --platform=$TARGETPLATFORM python:3.9-slim-bullseye AS builder
 
 # 设置构建参数，默认不使用代理
 ARG USE_PROXY=false
@@ -42,7 +42,7 @@ RUN python -m nuitka --follow-imports --standalone --include-package=gunicorn --
 RUN mkdir -p /app/build && mv /app/dist/run.dist/* /app/build && mv /app/templates /app/build && mv /app/static /app/build
 
 # 使用一个更小的基础镜像来运行二进制文件
-FROM debian:bullseye-slim
+FROM --platform=$TARGETPLATFORM debian:bullseye-slim
 
 # 复制编译后的二进制文件到新的基础镜像
 COPY --from=builder /app/build /app

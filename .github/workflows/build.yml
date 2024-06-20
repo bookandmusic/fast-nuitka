@@ -11,16 +11,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -39,8 +39,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/py-server:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/py-server:${{ env.date }}-${{ env.short_sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-nuitka:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-nuitka:${{ env.short_sha }}
           platforms: linux/amd64,linux/arm64
 
   extract-and-upload:
@@ -51,10 +51,10 @@ jobs:
       
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -69,28 +69,23 @@ jobs:
 
       - name: Extract and compress /app directory for amd64
         run: |
-          docker run -d --platform linux/amd64 --name extract_amd64 ${{ secrets.DOCKERHUB_USERNAME }}/py-server:${{ env.date }}-${{ env.short_sha }} sleep 10  
-          docker cp extract_amd64:/app ./app_amd64
-          tar -czvf app_amd64_${{ env.date }}_${{ env.short_sha }}.tar.gz -C ./app_amd64 .
+          docker create --platform linux/amd64 --name extract_amd64 ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-nuitka:latest
+          docker cp extract_amd64:/app ./fastapi-nutika-${{ env.short_sha }}-amd64
+          tar -czvf fastapi-nutika-${{ env.short_sha }}-amd64.tar.gz -C ./fastapi-nutika-${{ env.short_sha }}-amd64 .
           docker rm -f extract_amd64
 
       - name: Extract and compress /app directory for arm64
         run: |
-          docker run -d --platform linux/arm64 --name extract_arm64 ${{ secrets.DOCKERHUB_USERNAME }}/py-server:${{ env.date }}-${{ env.short_sha }} sleep 10 
-          docker cp extract_arm64:/app ./app_arm64
-          tar -czvf app_arm64_${{ env.date }}_${{ env.short_sha }}.tar.gz -C ./app_arm64 .
+          docker create --platform linux/arm64 --name extract_arm64 ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-nuitka:latest
+          docker cp extract_arm64:/app ./fastapi-nutika-${{ env.short_sha }}-arm64
+          tar -czvf fastapi-nutika-${{ env.short_sha }}-arm64.tar.gz -C ./fastapi-nutika-${{ env.short_sha }}-arm64 .
           docker rm -f extract_arm64
 
-      - name: Upload amd64 tar to release assets
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          name: app_amd64_${{ env.date }}_${{ env.short_sha }}.tar.gz
-          artifacts: ./app_amd64_${{ env.date }}_${{ env.short_sha }}.tar.gz
 
-      - name: Upload arm64 tar to release assets
+      - name: Upload tar to release assets
         uses: ncipollo/release-action@v1
         with:
+          tag: fastapi-nuitka-${{ env.short_sha }}
           allowUpdates: true
-          name: app_arm64_${{ env.date }}_${{ env.short_sha }}.tar.gz
-          artifacts: ./app_arm64_${{ env.date }}_${{ env.short_sha }}.tar.gz
+          artifacts: "fastapi-nutika-${{ env.short_sha }}-amd64.tar.gz,fastapi-nutika-${{ env.short_sha }}-arm64.tar.gz"
+
